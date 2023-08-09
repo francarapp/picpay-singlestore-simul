@@ -19,10 +19,10 @@ func NewEvent(ctx context.Context) *domain.Event {
 		EventID:       uuid.New().String(),
 		CorrelationID: string(correlationID),
 		DtCreated:     time.Now(),
-		DtReceived:    time.Now(),
-		DtIngested:    time.Now(),
-		Labels:        genLabels(eventName),
-		Payload:       genPayload(eventName),
+		// DtReceived:    time.Now(),
+		// DtIngested:    time.Now(),
+		Labels:  genLabels(eventName),
+		Payload: genPayload(eventName),
 	}
 	return &ev
 }
