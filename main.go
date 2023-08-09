@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/francarapp/picpay-singlestore-simul/pkg/action"
@@ -96,4 +97,5 @@ func query(db *gorm.DB, instances int) error {
 func config() {
 	rand.Seed(time.Now().UnixMilli())
 	time.Local = time.UTC
+	os.Setenv("TZ", "UTC")
 }
