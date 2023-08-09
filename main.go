@@ -23,7 +23,8 @@ func main() {
 	var batchFlag = flag.Int("batch", 10, "Qtd batch")
 
 	flag.Parse()
-	rand.Seed(time.Now().UnixMilli())
+
+	config()
 
 	db, err := gorm.Open(mysql.Open("root:singlestore@tcp(10.164.47.110:3306)/events?parseTime=true"), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
@@ -90,4 +91,9 @@ func query(db *gorm.DB, instances int) error {
 		fmt.Printf("Payload: %s", results)
 	}
 	return nil
+}
+
+func config() {
+	rand.Seed(time.Now().UnixMilli())
+	time.Local = time.UTC
 }

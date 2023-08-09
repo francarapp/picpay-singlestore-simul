@@ -1,6 +1,6 @@
 module github.com/francarapp/picpay-singlestore-simul
 
-go 1.18
+go 1.16
 
 require (
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
@@ -11,8 +11,3 @@ require (
 )
 
 require golang.org/x/exp v0.0.0-20230321023759-10a507213a29
-
-require (
-	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
-)
