@@ -62,11 +62,11 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 		producers = 1
 	}
 	for i := 0; i < producers; i++ {
-		go func() {
+		go func(idx int) {
 			MaxCorrelations := 100
 			pctx := fnNewContext(ctx)
 			count := int(qtd / producers)
-			if qtd%producers != 0 && i == 0 {
+			if qtd%producers != 0 && idx == 0 {
 				count += qtd % producers
 			}
 			for ii := 0; ii < count; ii++ {
@@ -75,7 +75,7 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 					pctx = fnNewContext(ctx)
 				}
 			}
-		}()
+		}(i)
 	}
 
 	stop := false
