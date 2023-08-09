@@ -1,15 +1,11 @@
 package domain
 
-import (
-	"time"
-)
-
 type Event struct {
 	EventName     string
 	EventID       string
 	CorrelationID string
 	UserID        string
-	DtCreated     time.Time
+	DtCreated     string
 	// DtReceived    time.Time
 	// DtIngested    time.Time
 	Labels  string

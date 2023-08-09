@@ -18,7 +18,7 @@ func NewEvent(ctx context.Context) *domain.Event {
 		EventName:     eventName,
 		EventID:       uuid.New().String(),
 		CorrelationID: string(correlationID),
-		DtCreated:     time.Now(),
+		DtCreated:     time.Now().Format("2006-01-02 15:04:05.999"),
 		// DtReceived:    time.Now(),
 		// DtIngested:    time.Now(),
 		Labels:  genLabels(eventName),
