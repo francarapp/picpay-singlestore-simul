@@ -57,7 +57,7 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 	fnNewContext := func(bctx context.Context) context.Context {
 		return context.WithValue(bctx, simul.CorrelationKey, simul.CorrelationID(uuid.New().String()))
 	}
-	producers := int(threads / 2)
+	producers := threads - 1
 	if producers == 0 {
 		producers = 1
 	}
@@ -92,6 +92,7 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 		if stalled == 4 {
 			stop = true
 		}
+		action.Flush(ctx)
 		fmt.Printf("%v", action.Monitor)
 	}
 

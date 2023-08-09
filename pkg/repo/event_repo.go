@@ -31,16 +31,17 @@ func NewGormEventRepo(db *gorm.DB, batchSize int, after FAfterExec) EventRepo {
 }
 
 type gormEventRepo struct {
-	Mutex     sync.Mutex
-	DB        *gorm.DB
-	BatchSize int
-	Buffer    []*domain.Event
-	After     FAfterExec
+	MutexCreate sync.Mutex
+	MutexFlush  sync.Mutex
+	DB          *gorm.DB
+	BatchSize   int
+	Buffer      []*domain.Event
+	After       FAfterExec
 }
 
 func (repo *gormEventRepo) Create(ctx context.Context, event *domain.Event) error {
-	repo.Mutex.Lock()
-	defer repo.Mutex.Unlock()
+	repo.MutexCreate.Lock()
+	defer repo.MutexCreate.Unlock()
 	repo.Buffer = append(repo.Buffer, event)
 	if len(repo.Buffer) >= repo.BatchSize {
 		return repo.Flush(ctx)
@@ -49,6 +50,8 @@ func (repo *gormEventRepo) Create(ctx context.Context, event *domain.Event) erro
 }
 
 func (repo *gormEventRepo) Flush(ctx context.Context) error {
+	repo.MutexFlush.Lock()
+	defer repo.MutexFlush.Unlock()
 	start := time.Now()
 	tx := repo.DB.CreateInBatches(repo.Buffer, repo.BatchSize)
 	repo.After(CreateExec, len(repo.Buffer), time.Since(start).Milliseconds())
