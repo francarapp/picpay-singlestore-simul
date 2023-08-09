@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
@@ -28,8 +27,8 @@ func main() {
 
 	config()
 
-	db, err := gorm.Open(mysql.Open("root:singlestore@tcp(10.164.47.110:3306)/events?parseTime=true&loc=UTC"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
+	db, err := gorm.Open(mysql.Open("root:singlestore@tcp(10.164.47.110:3306)/picpay?parseTime=true&loc=UTC"), &gorm.Config{
+		// Logger: logger.Default.LogMode(logger.Silent),
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
 		}},
