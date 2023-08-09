@@ -51,16 +51,25 @@ func main() {
 }
 
 func create(db *gorm.DB, threads int, qtd int, batch int) error {
-	fnNewContext := func() context.Context {
-		return context.WithValue(context.Background(), simul.CorrelationKey, simul.CorrelationID(uuid.New().String()))
+	ctx := context.Background()
+	fnNewContext := func(bctx context.Context) context.Context {
+		return context.WithValue(bctx, simul.CorrelationKey, simul.CorrelationID(uuid.New().String()))
 	}
-	MaxCorrelations := 100
-	ctx := fnNewContext()
-	for i := 0; i < qtd; i++ {
-		action.Dispatch(action.Create(simul.NewEvent(ctx)))
-		if i%MaxCorrelations == 0 {
-			ctx = fnNewContext()
-		}
+	producers := int(threads / 2)
+	if producers == 0 {
+		producers = 1
+	}
+	for i := 0; i < producers; i++ {
+		go func() {
+			MaxCorrelations := 100
+			pctx := fnNewContext(ctx)
+			for i := 0; i < qtd; i++ {
+				action.Dispatch(action.Create(simul.NewEvent(pctx)))
+				if i%MaxCorrelations == 0 {
+					pctx = fnNewContext(ctx)
+				}
+			}
+		}()
 	}
 
 	stop := false
