@@ -5,6 +5,7 @@ import (
 
 	"github.com/francarapp/picpay-singlestore-simul/pkg/repo"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 /*
@@ -30,6 +31,7 @@ func InitDispatching(cfg *DispatchConfig) error {
 			PrepareStmt:     true,
 			CreateBatchSize: config.BatchSize,
 			SkipHooks:       true,
+			Logger:          logger.Default.LogMode(logger.Silent),
 		}), config.BatchSize, done))
 	}
 
