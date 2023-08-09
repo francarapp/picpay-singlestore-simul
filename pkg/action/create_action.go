@@ -41,6 +41,7 @@ type eventCreateAct struct {
 }
 
 func (act *eventCreateAct) Do(ctx context.Context) error {
+	MonitorCreate.Add(1)
 	return act.Repo.Create(ctx, act.Event)
 }
 

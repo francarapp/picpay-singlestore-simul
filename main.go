@@ -93,11 +93,11 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 			stop = true
 		}
 		action.Flush(ctx)
-		fmt.Printf("%v", action.Monitor)
+		fmt.Printf("Creates: %d %v", action.MonitorCreate.Get(), action.Monitor)
 	}
 
 	action.Flush(ctx)
-	fmt.Printf("%v", action.Monitor)
+	fmt.Printf("Creates: %d %v", action.MonitorCreate.Get(), action.Monitor)
 	return nil
 }
 

@@ -6,6 +6,25 @@ import (
 	"github.com/francarapp/picpay-singlestore-simul/pkg/repo"
 )
 
+type Accumulator struct {
+	Lock  sync.RWMutex
+	Count int
+}
+
+func (accum *Accumulator) Add(c int) {
+	accum.Lock.Lock()
+	defer accum.Lock.Unlock()
+	accum.Count += c
+}
+
+func (accum *Accumulator) Get() int {
+	accum.Lock.RLock()
+	defer accum.Lock.RUnlock()
+	return accum.Count
+}
+
+var MonitorCreate = &Accumulator{}
+
 var Monitor = struct {
 	Creations int
 	Batchs    int
