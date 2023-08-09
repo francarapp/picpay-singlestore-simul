@@ -37,7 +37,7 @@ func main() {
 	}
 
 	action.InitDispatching(&action.DispatchConfig{
-		ChanSize:    100000,
+		ChanSize:    1000000,
 		ThreadsSize: *threadsFlag,
 		BatchSize:   *batchFlag,
 		DB:          db,
@@ -62,10 +62,25 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 			ctx = fnNewContext()
 		}
 	}
-	for action.Monitor.Creations < qtd {
+
+	stop := false
+	stalled := 0
+	stalledCount := 0
+	for !stop && action.Monitor.Creations < qtd {
 		time.Sleep(60 * time.Second)
+		if stalledCount == action.Monitor.Creations {
+			stalled++
+		} else {
+			stalled = 0
+			stalledCount = action.Monitor.Creations
+		}
+		if stalled == 4 {
+			stop = true
+		}
+		fmt.Printf("%v", action.Monitor)
 	}
 	fmt.Printf("%v", action.Monitor)
+
 	action.Flush(ctx)
 	return nil
 }
