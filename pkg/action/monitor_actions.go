@@ -23,6 +23,7 @@ func (accum *Accumulator) Get() int {
 	return accum.Count
 }
 
+var MonitorDispatch = &Accumulator{}
 var MonitorCreate = &Accumulator{}
 
 var Monitor = struct {

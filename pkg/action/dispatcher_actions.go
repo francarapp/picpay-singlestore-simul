@@ -47,13 +47,14 @@ func InitDispatching(cfg *DispatchConfig) error {
 }
 
 func Dispatch(action Action) error {
+	MonitorDispatch.Add(1)
 	dispatchChannel <- action
 	return nil
 }
 
 func Flush(ctx context.Context) error {
 	for _, repo := range repoBuffer {
-		repo.Flush(ctx)
+		repo.ForceFlush(ctx)
 	}
 	return nil
 }
