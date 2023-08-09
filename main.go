@@ -76,7 +76,7 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 	stalled := 0
 	stalledCount := 0
 	for !stop && action.Monitor.Creations < qtd {
-		time.Sleep(60 * time.Second)
+		time.Sleep(15 * time.Second)
 		if stalledCount == action.Monitor.Creations {
 			stalled++
 		} else {
@@ -88,9 +88,9 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 		}
 		fmt.Printf("%v", action.Monitor)
 	}
-	fmt.Printf("%v", action.Monitor)
 
 	action.Flush(ctx)
+	fmt.Printf("%v", action.Monitor)
 	return nil
 }
 
