@@ -63,9 +63,13 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 		go func() {
 			MaxCorrelations := 100
 			pctx := fnNewContext(ctx)
-			for i := 0; i < qtd; i++ {
+			count := int(qtd / producers)
+			if qtd%producers != 0 && i == 0 {
+				count += qtd % producers
+			}
+			for ii := 0; ii < count; ii++ {
 				action.Dispatch(action.Create(simul.NewEvent(pctx)))
-				if i%MaxCorrelations == 0 {
+				if ii%MaxCorrelations == 0 {
 					pctx = fnNewContext(ctx)
 				}
 			}
