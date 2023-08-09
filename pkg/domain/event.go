@@ -6,8 +6,8 @@ type Event struct {
 	CorrelationID string
 	UserID        string
 	DtCreated     string
-	// DtReceived    time.Time
-	// DtIngested    time.Time
-	Labels  string
-	Payload string
+	DtReceived    string
+	DtIngested    string
+	Labels        string
+	Payload       string
 }
