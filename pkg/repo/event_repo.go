@@ -11,6 +11,7 @@ import (
 
 type EventRepo interface {
 	Create(context.Context, *domain.Event) error
+	ForceFlush(ctx context.Context) error
 	Flush(ctx context.Context) error
 }
 
@@ -47,6 +48,12 @@ func (repo *gormEventRepo) Create(ctx context.Context, event *domain.Event) erro
 		return repo.Flush(ctx)
 	}
 	return nil
+}
+
+func (repo *gormEventRepo) ForceFlush(ctx context.Context) error {
+	repo.MutexCreate.Lock()
+	defer repo.MutexCreate.Unlock()
+	return repo.Flush(ctx)
 }
 
 func (repo *gormEventRepo) Flush(ctx context.Context) error {
