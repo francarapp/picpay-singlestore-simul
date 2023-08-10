@@ -19,6 +19,7 @@ import (
 )
 
 func main() {
+	var codFlag = flag.String("cod", "0", "simul code")
 	var createFlag = flag.Bool("create", true, "Create events")
 	var threadsFlag = flag.Int("threads", 2, "Paralel instances")
 	var qtdFlag = flag.Int("qtd", 100, "Qtd of events")
@@ -46,13 +47,14 @@ func main() {
 	})
 
 	if *createFlag {
-		create(db, *threadsFlag, *qtdFlag, *batchFlag)
+		create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
 	} else {
 		query(db, *threadsFlag)
 	}
 }
 
-func create(db *gorm.DB, threads int, qtd int, batch int) error {
+func create(db *gorm.DB, cod string, threads int, qtd int, batch int) error {
+	start := time.Now()
 	ctx := context.Background()
 	fnNewContext := func(bctx context.Context) context.Context {
 		return simul.UserContext(
@@ -97,12 +99,22 @@ func create(db *gorm.DB, threads int, qtd int, batch int) error {
 			stop = true
 		}
 		action.Flush(ctx)
-		fmt.Printf("Dispatches: %d Creates: %d %v", action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor)
+		show(cod)
 	}
 
 	action.Flush(ctx)
-	fmt.Printf("Dispatches: %d Creates: %d %v", action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor)
+
+	showFinal(cod, threads, qtd, batch, time.Since(start))
 	return nil
+}
+
+func show(cod string) {
+	fmt.Printf("SIMUL_%s[Dispatches: %d Creates: %d Avg: %d]  ", cod, action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor.AvgTime)
+}
+
+func showFinal(cod string, threads, qtd, batch int, duration time.Duration) {
+	fmt.Printf("\n\n*** SIMUL_%s[Trhreads: %d Qtd: %d Batch: %d] DURATION: %f \n", cod, threads, qtd, batch, duration.Minutes())
+	fmt.Printf("*** SIMUL_%s[Dispatches: %d Creates: %d Avg: %d] /n", cod, action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor.AvgTime)
 }
 
 func query(db *gorm.DB, instances int) error {
