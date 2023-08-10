@@ -114,7 +114,7 @@ func show(cod string) {
 
 func showFinal(cod string, threads, qtd, batch int, duration time.Duration) {
 	fmt.Printf("\n\n*** SIMUL_%s[Trhreads: %d Qtd: %d Batch: %d] DURATION: %f \n", cod, threads, qtd, batch, duration.Minutes())
-	fmt.Printf("*** SIMUL_%s[Dispatches: %d Creates: %d Avg: %d] /n", cod, action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor.AvgTime)
+	fmt.Printf("*** SIMUL_%s[Dispatches: %d Creates: %d Avg: %d] \n\n", cod, action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor.AvgTime)
 }
 
 func query(db *gorm.DB, instances int) error {
