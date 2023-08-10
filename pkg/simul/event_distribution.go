@@ -35,6 +35,8 @@ func genPayload(eventName string) string {
 	q := int(distJsonKeys.Rand())
 	if q == 0 {
 		q = 1
+	} else if q > 40 {
+		q = 40
 	}
 	json := []string{
 		fmt.Sprintf("\"value\": %f", math.Trunc(math.Abs(rand.NormFloat64()*100))),
