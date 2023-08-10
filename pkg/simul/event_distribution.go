@@ -26,7 +26,18 @@ func genEventName() string {
 }
 
 func genPayload(eventName string) string {
-	return fmt.Sprintf("{\"value\": %f}", math.Trunc(math.Abs(rand.NormFloat64()*100)))
+	q := rand.Intn(100)
+	json := []string{
+		fmt.Sprintf("\"value\": %f", math.Trunc(math.Abs(rand.NormFloat64()*100))),
+	}
+	for i := 1; i <= q; i++ {
+		json = append(json,
+			fmt.Sprintf("\"key_%d\":\"%s\"", i,
+				fmt.Sprintf("xpto_%d", rand.Intn(100)+1),
+			),
+		)
+	}
+	return fmt.Sprintf("{%s}", strings.Join(json, ","))
 }
 
 func genLabels(eventName string) string {
