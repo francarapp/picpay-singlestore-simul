@@ -49,7 +49,10 @@ func main() {
 
 	if *createFlag {
 		if *deamonFlag {
-			for {
+			for i := 0; ; i++ {
+				fmt.Println("\n\n***")
+				fmt.Printf("*** SIMUL_%s EXECUTION %d \n", *codFlag, i)
+				fmt.Println("***")
 				create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
 			}
 		} else {
