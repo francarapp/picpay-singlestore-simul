@@ -11,6 +11,12 @@ type Accumulator struct {
 	Count int
 }
 
+func (accum *Accumulator) Clean() {
+	accum.Lock.Lock()
+	defer accum.Lock.Unlock()
+	accum.Count = 0
+}
+
 func (accum *Accumulator) Add(c int) {
 	accum.Lock.Lock()
 	defer accum.Lock.Unlock()
@@ -51,4 +57,18 @@ func done(exec repo.MethodExec, qtd int, millis int64) {
 		}
 		Monitor.AvgTime = Monitor.AvgTime + int64((millis-Monitor.AvgTime)/int64(Monitor.Batchs))
 	}
+}
+
+func Clean() {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	Monitor.AvgTime = 0
+	Monitor.Batchs = 0
+	Monitor.Creations = 0
+	Monitor.MaxTime = 0
+	Monitor.MinTime = 0
+
+	MonitorCreate.Clean()
+	MonitorDispatch.Clean()
 }

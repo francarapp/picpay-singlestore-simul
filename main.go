@@ -109,6 +109,7 @@ func create(db *gorm.DB, cod string, threads int, qtd int, batch int) error {
 			stop = true
 		}
 		action.Flush(ctx)
+		action.Clean()
 		show(cod)
 	}
 
