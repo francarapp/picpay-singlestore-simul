@@ -120,7 +120,7 @@ func create(db *gorm.DB, cod string, threads int, qtd int, batch int) error {
 }
 
 func show(cod string) {
-	fmt.Printf("SIMUL_%s[Dispatches: %d Creates: %d Avg: %d]  ", cod, action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor.AvgTime)
+	fmt.Printf("SIMUL_%s[Dispatches: %d Creates: %d Avg: %d]  \n", cod, action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor.AvgTime)
 }
 
 func showFinal(cod string, threads, qtd, batch int, duration time.Duration) {
