@@ -2,6 +2,7 @@ package action
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/francarapp/picpay-singlestore-simul/pkg/domain"
@@ -13,8 +14,11 @@ type Action interface {
 }
 
 var repoIndex = 0
+var createMutex sync.Mutex
 
 func Create(event *domain.Event) Action {
+	createMutex.Lock()
+	defer createMutex.Unlock()
 	repoIndex = (repoIndex + 1) % config.ThreadsSize
 	return &eventCreateAct{
 		Event:     event,
