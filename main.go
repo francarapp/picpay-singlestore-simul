@@ -24,6 +24,7 @@ func main() {
 	var threadsFlag = flag.Int("threads", 2, "Paralel instances")
 	var qtdFlag = flag.Int("qtd", 100, "Qtd of events")
 	var batchFlag = flag.Int("batch", 10, "Qtd batch")
+	var deamonFlag = flag.Bool("deamon", false, "Continuous run")
 
 	flag.Parse()
 
@@ -47,7 +48,13 @@ func main() {
 	})
 
 	if *createFlag {
-		create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
+		if *deamonFlag {
+			for {
+				create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
+			}
+		} else {
+			create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
+		}
 	} else {
 		query(db, *threadsFlag)
 	}
@@ -63,7 +70,7 @@ func create(db *gorm.DB, cod string, threads int, qtd int, batch int) error {
 		)
 
 	}
-	producers := threads - 1
+	producers := int(threads / 2)
 	if producers == 0 {
 		producers = 1
 	}
