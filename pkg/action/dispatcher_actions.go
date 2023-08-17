@@ -2,6 +2,7 @@ package action
 
 import (
 	"context"
+	"sync"
 
 	"github.com/francarapp/picpay-singlestore-simul/pkg/repo"
 	"gorm.io/gorm"
@@ -12,7 +13,7 @@ import (
  */
 var config *DispatchConfig
 var dispatchChannel chan Action
-var repoBuffer []repo.EventRepo
+var repoBuffer *RepoBuffer
 
 type DispatchConfig struct {
 	ChanSize    int
@@ -24,14 +25,7 @@ type DispatchConfig struct {
 func InitDispatching(cfg *DispatchConfig) error {
 	config = cfg
 	dispatchChannel = make(chan Action, cfg.ChanSize)
-	repoBuffer = []repo.EventRepo{}
-	for i := 0; i < cfg.ThreadsSize; i++ {
-		repoBuffer = append(repoBuffer, repo.NewGormEventRepo(config.DB.Session(&gorm.Session{
-			PrepareStmt:     true,
-			CreateBatchSize: config.BatchSize,
-			SkipHooks:       true,
-		}), config.BatchSize, done))
-	}
+	repoBuffer = newRepoBuffer(cfg)
 
 	for i := 0; i < cfg.ThreadsSize; i++ {
 		go func() {
@@ -45,14 +39,45 @@ func InitDispatching(cfg *DispatchConfig) error {
 }
 
 func Dispatch(action Action) error {
-	MonitorDispatch.Add(1)
+	MonitorActionDispatch.Add()
 	dispatchChannel <- action
 	return nil
 }
 
-func Flush(ctx context.Context) error {
-	for _, repo := range repoBuffer {
+func ForceFlush(ctx context.Context) error {
+	repoBuffer.ForceFlush(ctx)
+	return nil
+}
+
+type RepoBuffer struct {
+	Lock   sync.RWMutex
+	Index  int
+	Buffer []repo.EventRepo
+}
+
+func newRepoBuffer(cfg *DispatchConfig) *RepoBuffer {
+	repoBuffer := RepoBuffer{Buffer: []repo.EventRepo{}}
+	for i := 0; i < cfg.ThreadsSize; i++ {
+		repoBuffer.Buffer = append(repoBuffer.Buffer, repo.NewGormEventRepo(i, config.DB.Session(&gorm.Session{
+			PrepareStmt:     true,
+			CreateBatchSize: config.BatchSize,
+			SkipHooks:       true,
+		}), config.BatchSize, done))
+	}
+	return &repoBuffer
+}
+
+func (repob *RepoBuffer) Next() repo.EventRepo {
+	repob.Lock.Lock()
+	defer repob.Lock.Unlock()
+	repob.Index = (repob.Index + 1) % len(repob.Buffer)
+	return repob.Buffer[repob.Index]
+}
+
+func (repob *RepoBuffer) ForceFlush(ctx context.Context) {
+	repob.Lock.Lock()
+	defer repob.Lock.Unlock()
+	for _, repo := range repob.Buffer {
 		repo.ForceFlush(ctx)
 	}
-	return nil
 }

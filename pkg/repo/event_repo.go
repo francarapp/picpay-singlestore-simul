@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -13,31 +14,39 @@ type EventRepo interface {
 	Create(context.Context, *domain.Event) error
 	ForceFlush(ctx context.Context) error
 	Flush(ctx context.Context) error
+
+	QueryRTCount(ctx context.Context, events []string, start, end string) error
+	QueryRTSum(ctx context.Context, events []string, start, end string) error
+	QueryRTLabels(ctx context.Context, events []string, start, end string, labels []string) error
 }
 
-type FAfterExec func(method MethodExec, qtd int, millis int64)
+type FAfterExec func(method MethodExec, idx int, qtd int, millis int64)
 type MethodExec string
 
 var (
-	CreateExec = MethodExec("Create")
-	QueryExec  = MethodExec("Query")
+	CreateExec        = MethodExec("Create")
+	QueryRTCountExec  = MethodExec("QueryRTCount")
+	QueryRTSumExec    = MethodExec("QueryRTSum")
+	QueryRTLabelsExec = MethodExec("QueryRTExec")
 )
 
-func NewGormEventRepo(db *gorm.DB, batchSize int, after FAfterExec) EventRepo {
+func NewGormEventRepo(idx int, db *gorm.DB, batchSize int, after FAfterExec) EventRepo {
 	return &gormEventRepo{
+		Index:     idx,
 		DB:        db,
 		BatchSize: batchSize,
-		After:     after,
+		FAfter:    after,
 	}
 }
 
 type gormEventRepo struct {
 	MutexCreate sync.Mutex
 	MutexFlush  sync.Mutex
+	Index       int
 	DB          *gorm.DB
 	BatchSize   int
 	Buffer      []*domain.Event
-	After       FAfterExec
+	FAfter      FAfterExec
 }
 
 func (repo *gormEventRepo) Create(ctx context.Context, event *domain.Event) error {
@@ -61,7 +70,68 @@ func (repo *gormEventRepo) Flush(ctx context.Context) error {
 	defer repo.MutexFlush.Unlock()
 	start := time.Now()
 	tx := repo.DB.CreateInBatches(repo.Buffer, repo.BatchSize)
-	repo.After(CreateExec, len(repo.Buffer), time.Since(start).Milliseconds())
+	repo.FAfter(CreateExec, repo.Index, len(repo.Buffer), time.Since(start).Milliseconds())
 	repo.Buffer = []*domain.Event{}
 	return tx.Error
 }
+
+func (repo *gormEventRepo) QueryRTCount(ctx context.Context, events []string, start, end string) error {
+	timestamp := time.Now()
+
+	var tx *gorm.DB
+	results := make([]map[string]interface{}, 0)
+	tx = repo.DB.Exec(
+		RTSelectCount,
+		start, end, events,
+	)
+	if tx.Error != nil {
+		fmt.Printf("Failed: %s", tx.Error)
+	} else {
+		fmt.Printf("Payload: %s", results)
+	}
+	repo.FAfter(QueryRTCountExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+
+	return nil
+}
+
+func (repo *gormEventRepo) QueryRTSum(ctx context.Context, events []string, start, end string) error {
+	timestamp := time.Now()
+
+	var tx *gorm.DB
+	results := make([]map[string]interface{}, 0)
+	tx = repo.DB.Raw(
+		RTSelectSum,
+		start, end, events,
+	).Find(&results)
+	if tx.Error != nil {
+		fmt.Printf("Failed: %s", tx.Error)
+	} else {
+		fmt.Printf("Payload: %s", results)
+	}
+	repo.FAfter(QueryRTCountExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+
+	return nil
+}
+
+func (repo *gormEventRepo) QueryRTLabels(ctx context.Context, events []string, start, end string, labels []string) error {
+	return nil
+}
+
+var (
+	RTSelectCount = `
+	select event_name, dt_created_min, format(count(*), 0)
+	from n_event 
+	where 
+	  dt_created_min between ? and ?
+	  and  event_name in (?)
+	group by event_name, dt_created_min
+	`
+	RTSelectSum = `
+	select event_name, dt_created_min, format(sum(payload::$valor), 0)
+	from n_event 
+	where 
+	  dt_created_min between ? and ?
+	  and  event_name in (?)
+	group by event_name, dt_created_min
+	`
+)

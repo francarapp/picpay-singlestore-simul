@@ -31,6 +31,14 @@ func genEventName() string {
 	return fmt.Sprintf("ev_bus_%d", index)
 }
 
+func genEventNameMinMax(min, max int) string {
+	index := int(dist.Rand())
+	for index < min || index > max {
+		index = int(dist.Rand())
+	}
+	return fmt.Sprintf("ev_bus_%d", index)
+}
+
 func genPayload(eventName string) string {
 	q := int(distJsonKeys.Rand())
 	if q == 0 {

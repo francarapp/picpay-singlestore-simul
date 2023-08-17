@@ -2,8 +2,6 @@ package action
 
 import (
 	"context"
-	"sync"
-	"time"
 
 	"github.com/francarapp/picpay-singlestore-simul/pkg/domain"
 	"github.com/francarapp/picpay-singlestore-simul/pkg/repo"
@@ -13,26 +11,32 @@ type Action interface {
 	Do(ctx context.Context) error
 }
 
-var repoIndex = 0
-var createMutex sync.Mutex
-
 func Create(event *domain.Event) Action {
-	createMutex.Lock()
-	defer createMutex.Unlock()
-	repoIndex = (repoIndex + 1) % config.ThreadsSize
 	return &eventCreateAct{
 		Event:     event,
-		Repo:      repoBuffer[repoIndex],
+		Repo:      repoBuffer.Next(),
 		BatchSize: config.BatchSize,
 	}
 }
 
-func Query(parameters map[string]string) Action {
-	return nil
+func QueryRTCount(events []string, start, end string) Action {
+	return &eventQueryAct{
+		Repo:   repoBuffer.Next(),
+		Exec:   repo.QueryRTCountExec,
+		Events: events,
+		Start:  start,
+		End:    end,
+	}
 }
 
-func QueryBetween(dtini, dtend time.Time, parameters map[string]string) Action {
-	return nil
+func QueryRTSum(events []string, start, end string) Action {
+	return &eventQueryAct{
+		Repo:   repoBuffer.Next(),
+		Exec:   repo.QueryRTSumExec,
+		Events: events,
+		Start:  start,
+		End:    end,
+	}
 }
 
 // =================================================
@@ -45,9 +49,28 @@ type eventCreateAct struct {
 }
 
 func (act *eventCreateAct) Do(ctx context.Context) error {
-	MonitorCreate.Add(1)
+	MonitorActionCreate.Add()
 	return act.Repo.Create(ctx, act.Event)
 }
 
 // ================================================
 // ===============   QUERY ACTION   ===============
+
+type eventQueryAct struct {
+	Repo   repo.EventRepo
+	Exec   repo.MethodExec
+	Events []string
+	Start  string
+	End    string
+}
+
+func (act *eventQueryAct) Do(ctx context.Context) error {
+	MonitorActionCreate.Add()
+	switch act.Exec {
+	case repo.QueryRTCountExec:
+		return act.Repo.QueryRTCount(ctx, act.Events, act.Start, act.End)
+	case repo.QueryRTSumExec:
+		return act.Repo.QueryRTSum(ctx, act.Events, act.Start, act.End)
+	}
+	return nil
+}

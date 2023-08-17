@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/francarapp/picpay-singlestore-simul/pkg/action"
-	"github.com/francarapp/picpay-singlestore-simul/pkg/domain"
 	"github.com/francarapp/picpay-singlestore-simul/pkg/simul"
 	"github.com/google/uuid"
 	"gorm.io/driver/mysql"
@@ -18,13 +17,28 @@ import (
 	"gorm.io/gorm/schema"
 )
 
+func _main() {
+	SIZE := 100000000
+	start := time.Now()
+	values := make([]string, SIZE)
+	count := 0
+	for i := 0; i < SIZE; i++ {
+		values[i] = fmt.Sprintf("%d", i)
+		count++
+	}
+	sec := time.Since(start).Seconds()
+	fmt.Printf("Tempo: %f\n", sec)
+	fmt.Printf("Size: %d\n", len(values))
+}
+
 func main() {
 	var codFlag = flag.String("cod", "0", "simul code")
-	var createFlag = flag.Bool("create", true, "Create events")
-	var threadsFlag = flag.Int("threads", 2, "Paralel instances")
-	var qtdFlag = flag.Int("qtd", 100, "Qtd of events")
+	var createFlag = flag.Bool("create", false, "Create events")
+	var threadsFlag = flag.Int("threads", 4, "Paralel instances")
+	var qtdFlag = flag.Int("qtd", 10, "Qtd of events")
 	var batchFlag = flag.Int("batch", 10, "Qtd batch")
 	var deamonFlag = flag.Bool("deamon", false, "Continuous run")
+	// var queryFlag = flag.String("query", "NRT", "Query Code")
 
 	flag.Parse()
 
@@ -59,13 +73,53 @@ func main() {
 			create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
 		}
 	} else {
-		query(db, *threadsFlag)
+		query(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
 	}
 }
 
-func create(db *gorm.DB, cod string, threads int, qtd int, batch int) error {
+func create(db *gorm.DB, execCod string, threads int, qtdEvs int, batchSize int) error {
 	start := time.Now()
 	ctx := context.Background()
+	producers := int(threads / 2)
+	if producers == 0 {
+		producers = 1
+	}
+
+	for i := 0; i < producers; i++ {
+		count := int(qtdEvs / producers)
+		if qtdEvs%producers != 0 && i == 0 {
+			count += qtdEvs % producers
+		}
+		go produceCreate(ctx, i, count)
+	}
+
+	produceWait(ctx, execCod, qtdEvs, func() int {
+		return int(action.MonitorRepoCreate.Get(action.AcExecutions))
+	})
+
+	action.ForceFlush(ctx)
+	showFinal(execCod, threads, qtdEvs, batchSize, time.Since(start), action.MonitorRepoCreate)
+	action.Clean()
+
+	return nil
+}
+
+func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents int) error {
+	start := time.Now()
+	ctx := context.Background()
+	for i := 0; i < qtdQueries; i++ {
+		action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-09 12:00:00", "2023-08-13 19:00:00"))
+	}
+
+	produceWait(ctx, execCod, qtdQueries, func() int {
+		return int(action.MonitorRepoQuery.Get(action.AcExecutions))
+	})
+	showFinal(execCod, threads, qtdQueries, 0, time.Since(start), action.MonitorRepoQuery)
+	return nil
+}
+
+func produceCreate(ctx context.Context, idx int, total int) {
+	MaxCorrelations := 100
 	fnNewContext := func(bctx context.Context) context.Context {
 		return simul.UserContext(
 			simul.CorrelateContext(bctx, uuid.NewString()),
@@ -73,83 +127,45 @@ func create(db *gorm.DB, cod string, threads int, qtd int, batch int) error {
 		)
 
 	}
-	producers := int(threads / 2)
-	if producers == 0 {
-		producers = 1
-	}
-	for i := 0; i < producers; i++ {
-		go func(idx int) {
-			MaxCorrelations := 100
-			pctx := fnNewContext(ctx)
-			count := int(qtd / producers)
-			if qtd%producers != 0 && idx == 0 {
-				count += qtd % producers
-			}
-			for ii := 0; ii < count; ii++ {
-				action.Dispatch(action.Create(simul.NewEvent(pctx)))
-				if ii%MaxCorrelations == 0 {
-					pctx = fnNewContext(ctx)
-				}
-			}
-		}(i)
-	}
 
+	pctx := fnNewContext(ctx)
+
+	for ii := 0; ii < total; ii++ {
+		action.Dispatch(action.Create(simul.NewEvent(pctx)))
+		if ii%MaxCorrelations == 0 {
+			pctx = fnNewContext(ctx)
+		}
+	}
+}
+
+func show(cod string) {
+	fmt.Printf("SIMUL_%s[Dispatches: %d Execs: %d Avg: %d]  \n", cod, action.MonitorActionDispatch.Get(action.AcDispatches), action.MonitorActionCreate.Get(action.AcExecutions), action.MonitorRepoCreate.Get(action.AcAvg))
+}
+
+func showFinal(cod string, threads, qtd, batch int, duration time.Duration, monitor *action.Accumulator) {
+	fmt.Printf("\n\n*** SIMUL_%s[Trhreads: %d Qtd: %d Batch: %d] DURATION: %f \n", cod, threads, qtd, batch, duration.Minutes())
+	fmt.Printf("*** SIMUL_%s[%s] \n\n", cod, monitor)
+}
+
+func produceWait(ctx context.Context, execCod string, qtdEvs int, getter func() int) {
 	stop := false
 	stalled := 0
 	stalledCount := 0
-	for !stop && action.Monitor.Creations < qtd {
+	for !stop && getter() < qtdEvs {
 		time.Sleep(15 * time.Second)
-		if stalledCount == action.Monitor.Creations {
+		if stalledCount == int(action.MonitorRepoCreate.Get(action.AcExecutions)) {
 			stalled++
 		} else {
 			stalled = 0
-			stalledCount = action.Monitor.Creations
+			stalledCount = int(action.MonitorRepoCreate.Get(action.AcExecutions))
 		}
 		if stalled == 4 {
 			stop = true
 		}
-		action.Flush(ctx)
-		show(cod)
+		action.ForceFlush(ctx)
+		show(execCod)
 	}
 
-	action.Flush(ctx)
-	showFinal(cod, threads, qtd, batch, time.Since(start))
-	action.Clean()
-
-	return nil
-}
-
-func show(cod string) {
-	fmt.Printf("SIMUL_%s[Dispatches: %d Creates: %d Avg: %d]  \n", cod, action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor.AvgTime)
-}
-
-func showFinal(cod string, threads, qtd, batch int, duration time.Duration) {
-	fmt.Printf("\n\n*** SIMUL_%s[Trhreads: %d Qtd: %d Batch: %d] DURATION: %f \n", cod, threads, qtd, batch, duration.Minutes())
-	fmt.Printf("*** SIMUL_%s[Dispatches: %d Creates: %d Avg: %d] \n\n", cod, action.MonitorDispatch.Get(), action.MonitorCreate.Get(), action.Monitor.AvgTime)
-}
-
-func query(db *gorm.DB, instances int) error {
-	var tx *gorm.DB
-	var events []domain.Event
-	db.Where("event_name = ?", "bus_ev_1").Find(&events)
-	fmt.Printf("Events: %s", events)
-
-	var results []map[string]interface{}
-	tx = db.Model(&domain.Event{}).Select("payload::$key_a").Where("event_name = ?", "bus_ev_1").Find(&results)
-	if tx.Error != nil {
-		fmt.Printf("Failed: %s", tx.Error)
-	} else {
-		fmt.Printf("Payload: %s", results)
-	}
-
-	results = make([]map[string]interface{}, 0)
-	tx = db.Raw("select payload::$key_a as key_a from event where event_name = ?", "bus_ev_1").Find(&results)
-	if tx.Error != nil {
-		fmt.Printf("Failed: %s", tx.Error)
-	} else {
-		fmt.Printf("Payload: %s", results)
-	}
-	return nil
 }
 
 func config() {

@@ -11,3 +11,8 @@ type Event struct {
 	Labels        string
 	Payload       string
 }
+
+// TableName overrides the table name used by User to `profiles`
+func (Event) TableName() string {
+	return "n_event"
+}

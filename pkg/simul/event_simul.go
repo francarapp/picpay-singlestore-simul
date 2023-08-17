@@ -39,3 +39,11 @@ var UsersQtd = 10000000
 func GenUserID() string {
 	return fmt.Sprintf("consumer_%d", rand.Intn(UsersQtd))
 }
+
+func GenEventNames(qtd int) []string {
+	events := []string{}
+	for i := 0; i < qtd; i++ {
+		events = append(events, genEventNameMinMax(400, 600))
+	}
+	return events
+}
