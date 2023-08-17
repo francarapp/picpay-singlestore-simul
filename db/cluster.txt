@@ -1,0 +1,4 @@
+LEAFS
+-----
+4 nodes m5.8xlarge: 32vCPUs 128GB
+SSD 16TB 10.000 iops 500MB/s

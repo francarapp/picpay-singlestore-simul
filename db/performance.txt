@@ -1,0 +1,141 @@
+-- LEAFS
+-- ---
+-- 4 nodes m5.8xlarge: 32vCPUs 128GB
+-- SSD 16TB 10.000 iops 500MB/s
+-- Observação:
+--      DISK USAGE <50%
+--      MEMORY USAGE <10%
+
+-- VOLUMETRIA ATUAL: 41BI eventos. 10TB storage.
+
+-- ===========================================
+-- =====         MODELO DE EVENTOS       =====
+-- ===========================================
+-- payload JSON: 
+--       atributos variáveis. 
+--       aributo value e quantity PERSISTED.
+-- labels: sequencia de palavras que indexam o evento,
+--       utiliza indice inverso (FULLTEXT)
+
+CREATE TABLE event(
+  event_name VARCHAR(40),
+  event_id VARCHAR(200),
+  correlation_id VARCHAR(200),
+  user_id VARCHAR(200),
+  dt_created VARCHAR(24),
+  dt_received VARCHAR(24), 
+  dt_ingested VARCHAR(24),  
+  labels VARCHAR(200),
+  payload JSON,
+  SORT KEY(dt_created),
+  SHARD(event_name),
+  FULLTEXT (labels)
+);
+
+CREATE INDEX idx_event_id ON event(event_id) USING HASH;
+CREATE INDEX idx_event_user ON event(user_id) USING HASH;
+CREATE INDEX idx_event_correlation ON event(correlation_id) USING HASH;
+
+CREATE INDEX idx_event_dt ON event(event_name, dt_created) USING HASH;
+
+ALTER TABLE event ADD value AS payload::$value PERSISTED DOUBLE;
+ALTER TABLE event ADD dt_created_min AS date_trunc('minute', str_to_date(dt_created, '%Y-%m-%d %H:%i:%s.%f')) PERSISTED DATETIME(6);
+ALTER TABLE event ADD dt_created_min AS date_trunc('hour', str_to_date(dt_created, '%Y-%m-%d %H:%i:%s.%f')) PERSISTED DATETIME(6);
+
+CREATE INDEX idx_event_dt_min ON event(event_name, dt_created_min) USING HASH;
+CREATE INDEX idx_event_dt_hour ON event(event_name, dt_created_hour) USING HASH;
+
+
+-- ===========================================
+-- =====            QUERIES NRT          =====
+-- ===========================================
+-- Queries que não estão restritas a um subconjunto
+-- dos eventos.
+-- Espera-se resultado em <5 min.
+-- 
+-- Conta a quantidade de eventos por minuto.
+--
+-- Tempo:
+-- Esperado: <5min
+
+select event_name, created_minute(dt_created), format(count(*), 0) from event
+group by event_name, created_minute(dt_created);
+
+--
+-- Soma o valor de todos os eventos por minuto.
+--
+-- Tempo:
+-- Esperado: <5min
+
+select event_name, created_minute(dt_created), format(sum(payload::$value), 0) from event
+group by event_name, created_minute(dt_created);
+
+-- ===========================================
+-- =====      QUERIES NRT INDEXADAS      =====
+-- ===========================================
+-- Queries que não estão restritas a um subconjunto
+-- dos eventos mas filtram através dos labels.
+-- Espera-se resultado em <1 min.
+
+--
+-- Soma o valor de todos os eventos por minuto
+-- E que contenham o label.
+--
+-- Tempo:
+-- Esperado: <1min
+
+select event_name, created_minute(dt_created), format(sum(payload::$value), 0) from event
+where
+  match(labels) against ('bus5')
+group by event_name, created_minute(dt_created);
+
+-- ==========================================
+-- =====            QUERIES RT          =====
+-- ==========================================
+-- Queries que SÃO restritas a um subconjunto
+-- dos eventos E a intervalo de tempo.
+-- Espera-se resultado em <15 s.
+
+-- 
+-- Conta a quantidade de eventos selecionados por minuto
+--
+-- Tempo: 
+-- Esperado: 15s
+
+select event_name, created_minute(dt_created), count(*) from event 
+where 
+  dt_created between '2023-08-11 12:00:00' and '2023-08-11 19:00:00'
+  and  event_name  in ("ev_bus_498", "ev_bus_499", "ev_bus_500", "ev_bus_501", "ev_bus_502")
+group by event_name, created_minute(dt_created);
+
+-- Soma o valorde eventos selecionados por minuto
+--
+-- Tempo: 
+-- Esperado: 15s
+
+select event_name, created_minute(dt_created), format(sum(payload::$value), 0) from event 
+where 
+  dt_created between '2023-08-11 12:00:00' and '2023-08-11 19:00:00'
+  and  event_name  in ("ev_bus_498", "ev_bus_499", "ev_bus_500", "ev_bus_501", "ev_bus_502")
+group by event_name, created_minute(dt_created);
+
+-- ==========================================
+-- =====       QUERIES RT INDEXADAS     =====
+-- ==========================================
+-- Queries que SÃO restritas a um subconjunto
+-- dos eventos E NÃO a intervalo de tempo.
+-- Utiliza o label para restringir.
+-- Espera-se resultado em <15 s.
+
+--
+-- Soma o valor de todos os eventos por minuto
+-- E que contenham o label.
+--
+-- Tempo:
+-- Esperado: <15s
+
+select event_name, created_minute(dt_created), format(sum(payload::$value), 0) from event 
+where 
+  event_name  in ("ev_bus_498", "ev_bus_499", "ev_bus_500", "ev_bus_501", "ev_bus_502")
+  and match(labels) against ('bus5')
+group by event_name, created_minute(dt_created);

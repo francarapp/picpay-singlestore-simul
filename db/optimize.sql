@@ -1,0 +1,18 @@
+SELECT
+    DATABASE_NAME,
+    TABLE_NAME,
+    FLOOR(AVG(ROWS)) AS avg_rows,
+    ROUND(STDDEV(ROWS)/AVG(ROWS),3) * 100 AS row_skew,
+    FLOOR(AVG(MEMORY_USE)) AS avg_memory,
+    ROUND(STDDEV(MEMORY_USE)/AVG(MEMORY_USE),3) * 100 AS memory_skew
+FROM INFORMATION_SCHEMA.TABLE_STATISTICS
+GROUP BY 1, 2
+HAVING SUM(ROWS) > 10000
+ORDER BY row_skew DESC;
+
+
+SELECT with(leaf_pushdown=true) 
+    SUM(c) rows,     
+    PARTITION_ID() 
+FROM (SELECT count(*) c FROM event GROUP BY user_id) reshuffle 
+GROUP BY PARTITION_ID();
