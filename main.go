@@ -112,11 +112,11 @@ func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents i
 	for i := 0; i < qtdQueries; i++ {
 		switch query {
 		case "RTCount":
-			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-09 12:00:00", "2023-08-13 19:00:00"))
+			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-11 12:00:00", "2023-08-13 19:00:00"))
 		case "RTSum":
-			action.Dispatch(action.QueryRTSum(simul.GenEventNames(qtdEvents), "2023-08-09 12:00:00", "2023-08-13 19:00:00"))
+			action.Dispatch(action.QueryRTSum(simul.GenEventNames(qtdEvents), "2023-08-11 12:00:00", "2023-08-13 19:00:00"))
 		default:
-			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-09 12:00:00", "2023-08-13 19:00:00"))
+			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-11 12:00:00", "2023-08-13 19:00:00"))
 
 		}
 	}
