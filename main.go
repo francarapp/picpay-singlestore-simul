@@ -78,6 +78,7 @@ func main() {
 }
 
 func create(db *gorm.DB, execCod string, threads int, qtdEvs int, batchSize int) error {
+	fmt.Printf("*****     CREATING Events[%d] Threads[%d]\n", qtdEvs, threads)
 	start := time.Now()
 	ctx := context.Background()
 	producers := int(threads / 2)
@@ -105,6 +106,7 @@ func create(db *gorm.DB, execCod string, threads int, qtdEvs int, batchSize int)
 }
 
 func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents int, query string) error {
+	fmt.Printf("*****     QUERY Queries[%d] Events[%d] Threads[%d]\n", qtdQueries, qtdEvents, threads)
 	start := time.Now()
 	ctx := context.Background()
 	for i := 0; i < qtdQueries; i++ {
