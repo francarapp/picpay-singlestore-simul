@@ -38,7 +38,7 @@ func main() {
 	var qtdFlag = flag.Int("qtd", 10, "Qtd of events")
 	var batchFlag = flag.Int("batch", 10, "Qtd batch")
 	var deamonFlag = flag.Bool("deamon", false, "Continuous run")
-	// var queryFlag = flag.String("query", "NRT", "Query Code")
+	var queryFlag = flag.String("query", "NRT", "Query Code")
 
 	flag.Parse()
 
@@ -73,7 +73,7 @@ func main() {
 			create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
 		}
 	} else {
-		query(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
+		query(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag, *queryFlag)
 	}
 }
 
@@ -104,11 +104,19 @@ func create(db *gorm.DB, execCod string, threads int, qtdEvs int, batchSize int)
 	return nil
 }
 
-func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents int) error {
+func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents int, query string) error {
 	start := time.Now()
 	ctx := context.Background()
 	for i := 0; i < qtdQueries; i++ {
-		action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-09 12:00:00", "2023-08-13 19:00:00"))
+		switch query {
+		case "RTCount":
+			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-09 12:00:00", "2023-08-13 19:00:00"))
+		case "RTSum":
+			action.Dispatch(action.QueryRTSum(simul.GenEventNames(qtdEvents), "2023-08-09 12:00:00", "2023-08-13 19:00:00"))
+		default:
+			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-09 12:00:00", "2023-08-13 19:00:00"))
+
+		}
 	}
 
 	produceWait(ctx, execCod, qtdQueries, func() int {
