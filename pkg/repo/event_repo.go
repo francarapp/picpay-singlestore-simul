@@ -76,6 +76,8 @@ func (repo *gormEventRepo) Flush(ctx context.Context) error {
 }
 
 func (repo *gormEventRepo) QueryRTCount(ctx context.Context, events []string, start, end string) error {
+	repo.MutexCreate.Lock()
+	defer repo.MutexCreate.Unlock()
 	timestamp := time.Now()
 
 	var tx *gorm.DB
