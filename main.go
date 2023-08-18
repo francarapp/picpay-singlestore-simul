@@ -38,7 +38,7 @@ func main() {
 	var qtdFlag = flag.Int("qtd", 10, "Qtd of events")
 	var batchFlag = flag.Int("batch", 10, "Qtd batch")
 	var deamonFlag = flag.Bool("deamon", false, "Continuous run")
-	var queryFlag = flag.String("query", "NRT", "Query Code")
+	var queryFlag = flag.String("query", "RTCount", "Query Code")
 
 	flag.Parse()
 
