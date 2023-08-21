@@ -33,12 +33,16 @@ func _main() {
 
 func main() {
 	var codFlag = flag.String("cod", "0", "simul code")
-	var createFlag = flag.Bool("create", false, "Create events")
 	var threadsFlag = flag.Int("threads", 4, "Paralel instances")
-	var qtdFlag = flag.Int("qtd", 10, "Qtd of events")
-	var batchFlag = flag.Int("batch", 10, "Qtd batch")
+	var createFlag = flag.Bool("create", false, "Create events")
 	var deamonFlag = flag.Bool("deamon", false, "Continuous run")
-	var queryFlag = flag.String("query", "RTCount", "Query Code")
+
+	var createQtdFlag = flag.Int("createQtd", 10, "Qtd of create events")
+	var createBatchFlag = flag.Int("createBatch", 10, "Qtd batch")
+
+	var queryQtdFlag = flag.Int("queryQtd", 10, "Qtd of events")
+	var queryEventsFlag = flag.Int("queryEvents", 5, "Qtd of events")
+	var querySelectFlag = flag.String("querySelect", "RTCount", "Query Code")
 
 	flag.Parse()
 
@@ -57,7 +61,7 @@ func main() {
 	action.InitDispatching(&action.DispatchConfig{
 		ChanSize:    1000000,
 		ThreadsSize: *threadsFlag,
-		BatchSize:   *batchFlag,
+		BatchSize:   *createBatchFlag,
 		DB:          db,
 	})
 
@@ -67,13 +71,13 @@ func main() {
 				fmt.Println("\n\n***")
 				fmt.Printf("*** SIMUL_%s EXECUTION %d \n", *codFlag, i)
 				fmt.Println("***")
-				create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
+				create(db, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag)
 			}
 		} else {
-			create(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag)
+			create(db, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag)
 		}
 	} else {
-		query(db, *codFlag, *threadsFlag, *qtdFlag, *batchFlag, *queryFlag)
+		query(db, *codFlag, *threadsFlag, *queryQtdFlag, **&queryEventsFlag, *querySelectFlag)
 	}
 }
 
@@ -105,12 +109,12 @@ func create(db *gorm.DB, execCod string, threads int, qtdEvs int, batchSize int)
 	return nil
 }
 
-func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents int, query string) error {
+func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents int, selectCod string) error {
 	fmt.Printf("*****     QUERY Queries[%d] Events[%d] Threads[%d]\n", qtdQueries, qtdEvents, threads)
 	start := time.Now()
 	ctx := context.Background()
 	for i := 0; i < qtdQueries; i++ {
-		switch query {
+		switch selectCod {
 		case "RTCount":
 			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-11 12:00:00", "2023-08-13 19:00:00"))
 		case "RTSum":
