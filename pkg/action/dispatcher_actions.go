@@ -20,6 +20,7 @@ type DispatchConfig struct {
 	ThreadsSize int
 	BatchSize   int
 	DB          *gorm.DB
+	Sparse      bool
 }
 
 func InitDispatching(cfg *DispatchConfig) error {
@@ -62,7 +63,7 @@ func newRepoBuffer(cfg *DispatchConfig) *RepoBuffer {
 			PrepareStmt:     true,
 			CreateBatchSize: config.BatchSize,
 			SkipHooks:       true,
-		}), config.BatchSize, done))
+		}), config.Sparse, config.BatchSize, done))
 	}
 	return &repoBuffer
 }

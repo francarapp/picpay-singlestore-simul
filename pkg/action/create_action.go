@@ -11,9 +11,15 @@ type Action interface {
 	Do(ctx context.Context) error
 }
 
-func Create(event *domain.Event) Action {
+func Create(event *domain.Event, vector ...float64) Action {
+	sparse := false
+	if len(vector) > 0 {
+		sparse = true
+	}
 	return &eventCreateAct{
 		Event:     event,
+		Sparse:    sparse,
+		Vector:    vector,
 		Repo:      repoBuffer.Next(),
 		BatchSize: config.BatchSize,
 	}
@@ -44,12 +50,17 @@ func QueryRTSum(events []string, start, end string) Action {
 
 type eventCreateAct struct {
 	Event     *domain.Event
+	Vector    []float64
 	Repo      repo.EventRepo
+	Sparse    bool
 	BatchSize int
 }
 
 func (act *eventCreateAct) Do(ctx context.Context) error {
 	MonitorActionCreate.Add()
+	if act.Sparse {
+		return act.Repo.Create(ctx, act.Event, act.Vector...)
+	}
 	return act.Repo.Create(ctx, act.Event)
 }
 

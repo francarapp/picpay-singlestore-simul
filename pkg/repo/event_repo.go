@@ -11,7 +11,7 @@ import (
 )
 
 type EventRepo interface {
-	Create(context.Context, *domain.Event) error
+	Create(context.Context, *domain.Event, ...float64) error
 	ForceFlush(ctx context.Context) error
 	Flush(ctx context.Context) error
 
@@ -30,10 +30,11 @@ var (
 	QueryRTLabelsExec = MethodExec("QueryRTExec")
 )
 
-func NewGormEventRepo(idx int, db *gorm.DB, batchSize int, after FAfterExec) EventRepo {
+func NewGormEventRepo(idx int, db *gorm.DB, sparse bool, batchSize int, after FAfterExec) EventRepo {
 	return &gormEventRepo{
 		Index:     idx,
 		DB:        db,
+		Sparse:    sparse,
 		BatchSize: batchSize,
 		FAfter:    after,
 	}
@@ -44,15 +45,16 @@ type gormEventRepo struct {
 	MutexFlush  sync.Mutex
 	Index       int
 	DB          *gorm.DB
+	Sparse      bool
 	BatchSize   int
-	Buffer      []*domain.Event
+	Buffer      []*domain.SEvent
 	FAfter      FAfterExec
 }
 
-func (repo *gormEventRepo) Create(ctx context.Context, event *domain.Event) error {
+func (repo *gormEventRepo) Create(ctx context.Context, event *domain.Event, vector ...float64) error {
 	repo.MutexCreate.Lock()
 	defer repo.MutexCreate.Unlock()
-	repo.Buffer = append(repo.Buffer, event)
+	repo.Buffer = append(repo.Buffer, domain.NewSEvent(event, vector))
 	if len(repo.Buffer) >= repo.BatchSize {
 		return repo.Flush(ctx)
 	}
@@ -68,11 +70,26 @@ func (repo *gormEventRepo) ForceFlush(ctx context.Context) error {
 func (repo *gormEventRepo) Flush(ctx context.Context) error {
 	repo.MutexFlush.Lock()
 	defer repo.MutexFlush.Unlock()
+
+	buffer := repo.castIf()
+
 	start := time.Now()
-	tx := repo.DB.CreateInBatches(repo.Buffer, repo.BatchSize)
+	tx := repo.DB.CreateInBatches(buffer, repo.BatchSize)
 	repo.FAfter(CreateExec, repo.Index, len(repo.Buffer), time.Since(start).Milliseconds())
-	repo.Buffer = []*domain.Event{}
+	repo.Buffer = []*domain.SEvent{}
 	return tx.Error
+}
+
+func (repo *gormEventRepo) castIf() interface{} {
+	if repo.Sparse {
+		return repo.Buffer
+	}
+
+	nbuffer := []*domain.Event{}
+	for _, ev := range repo.Buffer {
+		nbuffer = append(nbuffer, &ev.Event)
+	}
+	return nbuffer
 }
 
 func (repo *gormEventRepo) QueryRTCount(ctx context.Context, events []string, start, end string) error {

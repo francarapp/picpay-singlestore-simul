@@ -58,3 +58,52 @@ from event
 where
   to_number(substring(event_name, 8)) between 496 and 500;
   
+
+  CREATE  TABLE `nn_event` (
+  `event_name` varchar(40) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `event_id` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `correlation_id` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `user_id`  varchar(200)  CHARACTER SET utf8  COLLATE utf8_general_ci DEFAULT NULL,
+  `dt_created` datetime(6) DEFAULT  NULL,
+  `dt_received` datetime(6) DEFAULT  NULL,
+  `dt_ingested` datetime(6) DEFAULT NULL,
+  `labels` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `payload` JSON COLLATE utf8_bin,
+
+  `value`  as payload::$value PERSISTED double,
+  `dt_created_min` as date_trunc('minute', dt_created) PERSISTED  datetime(6),
+  `dt_created_hour` as date_trunc('hour', dt_created) PERSISTED  datetime(6),
+  SORT KEY (`dt_created_hour`,`event_name`),
+  SHARD KEY `__SHARDKEY` (`user_id`),
+  FULLTEXT  KEY `labels` (`labels`),
+
+  KEY `idx_n_event_id` (`event_id`) USING  HASH,
+  KEY `idx_n_event_user` (`user_id`) USING  HASH,
+  KEY `idx_n_event_correlation` (`correlation_id`) USING  HASH,
+  KEY `idx_n_event_dt_min` (`event_name`,`dt_created_min`) USING  HASH
+);
+
+CREATE  TABLE `s_event` (
+  `event_name` varchar(40) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `event_id` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `correlation_id` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `user_id`  varchar(200)  CHARACTER SET utf8  COLLATE utf8_general_ci DEFAULT NULL,
+  `dt_created` datetime(6) DEFAULT  NULL,
+  `dt_received` datetime(6) DEFAULT  NULL,
+  `dt_ingested` datetime(6) DEFAULT NULL,
+  `labels` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `payload` JSON COLLATE utf8_bin,
+  `vector` blob DEFAULT NULL,
+
+  `value`  as payload::$value PERSISTED double,
+  `dt_created_min` as date_trunc('minute', dt_created) PERSISTED  datetime(6),
+  `dt_created_hour` as date_trunc('hour', dt_created) PERSISTED  datetime(6),
+  SORT KEY (`dt_created_hour`,`event_name`),
+  SHARD KEY `__SHARDKEY` (`user_id`),
+  FULLTEXT  KEY `labels` (`labels`),
+
+  KEY `idx_n_event_id` (`event_id`) USING  HASH,
+  KEY `idx_n_event_user` (`user_id`) USING  HASH,
+  KEY `idx_n_event_correlation` (`correlation_id`) USING  HASH,
+  KEY `idx_n_event_dt_min` (`event_name`,`dt_created_min`) USING  HASH
+);

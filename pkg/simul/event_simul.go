@@ -47,3 +47,15 @@ func GenEventNames(qtd int) []string {
 	}
 	return events
 }
+
+func GenVector(sparse bool, size int, sparseRatio float64) []float64 {
+	vector := []float64{}
+	if !sparse {
+		return vector
+	}
+	for i := 0; i < size; i++ {
+		vector = append(vector, rand.Float64())
+
+	}
+	return vector
+}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -18,17 +19,9 @@ import (
 )
 
 func _main() {
-	SIZE := 100000000
-	start := time.Now()
-	values := make([]string, SIZE)
-	count := 0
-	for i := 0; i < SIZE; i++ {
-		values[i] = fmt.Sprintf("%d", i)
-		count++
-	}
-	sec := time.Since(start).Seconds()
-	fmt.Printf("Tempo: %f\n", sec)
-	fmt.Printf("Size: %d\n", len(values))
+	vector := []float64{0.1, 0.2, 0.3}
+	v, _ := json.Marshal(vector)
+	fmt.Printf("JSON %s\n", string(v))
 }
 
 func main() {
@@ -38,8 +31,10 @@ func main() {
 	var deamonFlag = flag.Bool("deamon", false, "Continuous run")
 	var silentFlag = flag.Bool("silent", true, "Silent queries")
 
+	var createSparseFlag = flag.Bool("createSparse", false, "generate sparse vector")
 	var createQtdFlag = flag.Int("createQtd", 100, "Qtd of create events")
 	var createBatchFlag = flag.Int("createBatch", 10, "Qtd batch")
+	var createCorrelationsFlag = flag.Int("createCorrelation", 100, "Events with same correlation")
 
 	var queryQtdFlag = flag.Int("queryQtd", 10, "Qtd of events")
 	var queryEventsFlag = flag.Int("queryEvents", 5, "Qtd of events")
@@ -69,6 +64,7 @@ func main() {
 		ChanSize:    1000000,
 		ThreadsSize: *threadsFlag,
 		BatchSize:   *createBatchFlag,
+		Sparse:      *createSparseFlag,
 		DB:          db,
 	})
 
@@ -78,10 +74,10 @@ func main() {
 				fmt.Println("\n\n***")
 				fmt.Printf("*** SIMUL_%s EXECUTION %d \n", *codFlag, i)
 				fmt.Println("***")
-				create(db, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag)
+				create(db, *createSparseFlag, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag, *createCorrelationsFlag)
 			}
 		} else {
-			create(db, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag)
+			create(db, *createSparseFlag, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag, *createCorrelationsFlag)
 		}
 	} else {
 		query(db, *codFlag, *threadsFlag, *queryQtdFlag,
@@ -90,7 +86,7 @@ func main() {
 	}
 }
 
-func create(db *gorm.DB, execCod string, threads int, qtdEvs int, batchSize int) error {
+func create(db *gorm.DB, sparse bool, execCod string, threads int, qtdEvs int, batchSize int, maxCorrelations int) error {
 	fmt.Printf("*****     CREATING Events[%d] Threads[%d]\n", qtdEvs, threads)
 	start := time.Now()
 	ctx := context.Background()
@@ -104,7 +100,11 @@ func create(db *gorm.DB, execCod string, threads int, qtdEvs int, batchSize int)
 		if qtdEvs%producers != 0 && i == 0 {
 			count += qtdEvs % producers
 		}
-		go produceCreate(ctx, i, count)
+		if sparse {
+			go produceSparse(ctx, sparse, i, count, maxCorrelations)
+		} else {
+			go produceCreate(ctx, sparse, i, count, maxCorrelations)
+		}
 	}
 
 	produceWait(ctx, execCod, qtdEvs, func() int {
@@ -141,8 +141,7 @@ func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents i
 	return nil
 }
 
-func produceCreate(ctx context.Context, idx int, total int) {
-	MaxCorrelations := 100
+func produceCreate(ctx context.Context, sparse bool, idxProducer int, totalPerProducer int, maxCorrelations int) {
 	fnNewContext := func(bctx context.Context) context.Context {
 		return simul.UserContext(
 			simul.CorrelateContext(bctx, uuid.NewString()),
@@ -152,12 +151,31 @@ func produceCreate(ctx context.Context, idx int, total int) {
 	}
 
 	pctx := fnNewContext(ctx)
-
-	for ii := 0; ii < total; ii++ {
+	for ii := 0; ii < totalPerProducer; ii++ {
 		action.Dispatch(action.Create(simul.NewEvent(pctx)))
-		if ii%MaxCorrelations == 0 {
+		if ii%maxCorrelations == 0 {
 			pctx = fnNewContext(ctx)
 		}
+	}
+}
+
+func produceSparse(ctx context.Context, sparse bool, idxProducer int, totalPerProducer int, maxCorrelations int) {
+	fnNewContext := func(bctx context.Context) context.Context {
+		return simul.UserContext(
+			simul.CorrelateContext(bctx, uuid.NewString()),
+			simul.GenUserID(),
+		)
+
+	}
+
+	MaxDimensions := 1000
+	SparseRatio := 0.0
+	event := simul.NewEvent(fnNewContext(ctx))
+	for ii := 0; ii < totalPerProducer; ii++ {
+		if ii%maxCorrelations == 0 {
+			event = simul.NewEvent(fnNewContext(ctx))
+		}
+		action.Dispatch(action.Create(event.Clone(), simul.GenVector(sparse, MaxDimensions, SparseRatio)...))
 	}
 }
 
