@@ -84,7 +84,9 @@ func main() {
 			create(db, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag)
 		}
 	} else {
-		query(db, *codFlag, *threadsFlag, *queryQtdFlag, **&queryEventsFlag, *querySelectFlag, *queryStartFlag, *queryEndFlag)
+		query(db, *codFlag, *threadsFlag, *queryQtdFlag,
+			*queryEventsFlag, *querySelectFlag,
+			*queryStartFlag, *queryEndFlag)
 	}
 }
 
