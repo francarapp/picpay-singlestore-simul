@@ -116,7 +116,7 @@ func (repo *gormEventRepo) QueryRTLabels(ctx context.Context, events []string, s
 var (
 	RTSelectCount = `
 	select event_name, dt_created_min, format(count(*), 0)
-	from n_event 
+	from nn_event 
 	where 
 	  dt_created_min between ? and ?
 	  and  event_name in (?)
@@ -124,7 +124,7 @@ var (
 	`
 	RTSelectSum = `
 	select event_name, dt_created_min, format(sum(payload::$valor), 0)
-	from n_event 
+	from nn_event 
 	where 
 	  dt_created_min between ? and ?
 	  and  event_name in (?)
