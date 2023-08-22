@@ -34,6 +34,30 @@ func NewEvent(ctx context.Context) *domain.Event {
 	return &ev
 }
 
+func NewSEvent(ctx context.Context, row int) *domain.Event {
+	userID := UserID("888")
+	if ctx.Value(UserKey) != nil {
+		userID = ctx.Value(UserKey).(UserID)
+	}
+	correlationID := CorrelationID("999")
+	if ctx.Value(CorrelationKey) != nil {
+		correlationID = ctx.Value(CorrelationKey).(CorrelationID)
+	}
+	eventName := genEventName()
+	ev := domain.Event{
+		EventName:     eventName,
+		EventID:       uuid.New().String(),
+		UserID:        string(userID),
+		CorrelationID: string(correlationID),
+		DtCreated:     time.Now().Format("2006-01-02 15:04:05.999"),
+		DtReceived:    time.Now().Format("2006-01-02 15:04:05.999"),
+		DtIngested:    time.Now().Format("2006-01-02 15:04:05.999"),
+		Labels:        genLabels(eventName),
+		Payload:       genPayload(eventName, row),
+	}
+	return &ev
+}
+
 var UsersQtd = 10000000
 
 func GenUserID() string {

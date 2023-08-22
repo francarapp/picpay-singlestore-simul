@@ -39,7 +39,7 @@ func genEventNameMinMax(min, max int) string {
 	return fmt.Sprintf("ev_bus_%d", index)
 }
 
-func genPayload(eventName string) string {
+func genPayload(eventName string, rows ...int) string {
 	q := int(distJsonKeys.Rand())
 	if q == 0 {
 		q = 1
@@ -48,6 +48,9 @@ func genPayload(eventName string) string {
 	}
 	json := []string{
 		fmt.Sprintf("\"value\": %f", math.Trunc(math.Abs(rand.NormFloat64()*100))),
+	}
+	if len(rows) > 0 {
+		json = append(json, fmt.Sprintf("\"row\": %d", rows[0]))
 	}
 	for i := 1; i <= q; i++ {
 		json = append(json,
