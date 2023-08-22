@@ -36,6 +36,7 @@ func main() {
 	var threadsFlag = flag.Int("threads", 4, "Paralel instances")
 	var createFlag = flag.Bool("create", true, "Create events")
 	var deamonFlag = flag.Bool("deamon", false, "Continuous run")
+	var silentFlag = flag.Bool("silent", true, "Silent queries")
 
 	var createQtdFlag = flag.Int("createQtd", 100, "Qtd of create events")
 	var createBatchFlag = flag.Int("createBatch", 10, "Qtd batch")
@@ -48,8 +49,12 @@ func main() {
 
 	config()
 
+	alogger := logger.Default.LogMode(logger.Silent)
+	if !*silentFlag {
+		alogger = logger.Default.LogMode(logger.Info)
+	}
 	db, err := gorm.Open(mysql.Open("root:singlestore@tcp(10.164.47.110:3306)/events?parseTime=true&loc=UTC"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
+		Logger: alogger,
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
 		}},
