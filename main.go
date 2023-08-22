@@ -171,11 +171,14 @@ func produceSparse(ctx context.Context, sparse bool, idxProducer int, totalPerPr
 	MaxDimensions := 1000
 	SparseRatio := 0.0
 	event := simul.NewEvent(fnNewContext(ctx))
+	currentCorrelation := 0
 	for ii := 0; ii < totalPerProducer; ii++ {
 		if ii%maxCorrelations == 0 {
 			event = simul.NewEvent(fnNewContext(ctx))
+			currentCorrelation = 0
 		}
-		action.Dispatch(action.Create(event.Clone(ii), simul.GenVector(sparse, MaxDimensions, SparseRatio)...))
+		action.Dispatch(action.Create(event.Clone(currentCorrelation), simul.GenVector(sparse, MaxDimensions, SparseRatio)...))
+		currentCorrelation++
 	}
 }
 
