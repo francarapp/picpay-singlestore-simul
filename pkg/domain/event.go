@@ -26,7 +26,11 @@ func (Event) TableName() string {
 	return "nn_event"
 }
 
-func (event *Event) Clone() *Event {
+func (event *Event) Clone(row int) *Event {
+	jmap := make(map[string]interface{})
+	json.Unmarshal([]byte(event.Payload), &jmap)
+	jmap["row"] = row
+	buffer, _ := json.Marshal(jmap)
 	return &Event{
 		EventName:     event.EventName,
 		EventID:       uuid.NewString(),
@@ -36,7 +40,7 @@ func (event *Event) Clone() *Event {
 		DtReceived:    event.DtReceived,
 		DtIngested:    event.DtIngested,
 		Labels:        event.Labels,
-		Payload:       event.Payload,
+		Payload:       string(buffer),
 	}
 }
 
