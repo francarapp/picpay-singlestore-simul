@@ -73,5 +73,5 @@ func genLabels(eventName string) string {
 	labels := []string{"operational"}
 	labels = append(labels, fGenLabel()...)
 
-	return strings.Join(labels, ",")
+	return strings.Join(labels, " ")
 }

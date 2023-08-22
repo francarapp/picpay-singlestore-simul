@@ -14,5 +14,5 @@ type Event struct {
 
 // TableName overrides the table name used by User to `profiles`
 func (Event) TableName() string {
-	return "n_event"
+	return "nn_event"
 }

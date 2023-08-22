@@ -34,10 +34,10 @@ func _main() {
 func main() {
 	var codFlag = flag.String("cod", "0", "simul code")
 	var threadsFlag = flag.Int("threads", 4, "Paralel instances")
-	var createFlag = flag.Bool("create", false, "Create events")
+	var createFlag = flag.Bool("create", true, "Create events")
 	var deamonFlag = flag.Bool("deamon", false, "Continuous run")
 
-	var createQtdFlag = flag.Int("createQtd", 10, "Qtd of create events")
+	var createQtdFlag = flag.Int("createQtd", 100, "Qtd of create events")
 	var createBatchFlag = flag.Int("createBatch", 10, "Qtd batch")
 
 	var queryQtdFlag = flag.Int("queryQtd", 10, "Qtd of events")
