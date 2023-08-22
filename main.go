@@ -44,6 +44,8 @@ func main() {
 	var queryQtdFlag = flag.Int("queryQtd", 10, "Qtd of events")
 	var queryEventsFlag = flag.Int("queryEvents", 5, "Qtd of events")
 	var querySelectFlag = flag.String("querySelect", "RTCount", "Query Code")
+	var queryStartFlag = flag.String("queryStart", "2023-08-11 12:00:00", "Start date/time")
+	var queryEndFlag = flag.String("queryEnd", "2023-08-13 19:00:00", "End data/time")
 
 	flag.Parse()
 
@@ -82,7 +84,7 @@ func main() {
 			create(db, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag)
 		}
 	} else {
-		query(db, *codFlag, *threadsFlag, *queryQtdFlag, **&queryEventsFlag, *querySelectFlag)
+		query(db, *codFlag, *threadsFlag, *queryQtdFlag, **&queryEventsFlag, *querySelectFlag, *queryStartFlag, *queryEndFlag)
 	}
 }
 
@@ -114,18 +116,18 @@ func create(db *gorm.DB, execCod string, threads int, qtdEvs int, batchSize int)
 	return nil
 }
 
-func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents int, selectCod string) error {
+func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents int, selectCod string, start string, end string) error {
 	fmt.Printf("*****     QUERY Queries[%d] Events[%d] Threads[%d]\n", qtdQueries, qtdEvents, threads)
-	start := time.Now()
+	startTm := time.Now()
 	ctx := context.Background()
 	for i := 0; i < qtdQueries; i++ {
 		switch selectCod {
 		case "RTCount":
-			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-11 12:00:00", "2023-08-13 19:00:00"))
+			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), start, end))
 		case "RTSum":
-			action.Dispatch(action.QueryRTSum(simul.GenEventNames(qtdEvents), "2023-08-11 12:00:00", "2023-08-13 19:00:00"))
+			action.Dispatch(action.QueryRTSum(simul.GenEventNames(qtdEvents), start, end))
 		default:
-			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), "2023-08-11 12:00:00", "2023-08-13 19:00:00"))
+			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), start, end))
 
 		}
 	}
@@ -133,7 +135,7 @@ func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents i
 	produceWait(ctx, execCod, qtdQueries, func() int {
 		return int(action.MonitorRepoQuery.Get(action.AcExecutions))
 	})
-	showFinal(execCod, threads, qtdQueries, 0, time.Since(start), action.MonitorRepoQuery)
+	showFinal(execCod, threads, qtdQueries, 0, time.Since(startTm), action.MonitorRepoQuery)
 	return nil
 }
 
