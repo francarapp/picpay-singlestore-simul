@@ -183,6 +183,7 @@ var (
 	  dt_created_min between ? and ?
 	  and  event_name in (?)
 	group by event_name, dt_created_min
+	option (interpreter_mode = compile_lite)
 	`
 	MRTSelectCount = `
 	select event_name, dt_created_min, format(count(*), 0)
@@ -191,6 +192,7 @@ var (
 	  dt_created_min between ? and ?
 	  and  event_name in (?)
 	group by event_name, dt_created_min
+	option (interpreter_mode = compile_lite)
 	`
 	RTSelectSum = `
 	select event_name, dt_created_min, format(sum(payload::$value), 0)
@@ -199,6 +201,7 @@ var (
 	  dt_created_min between ? and ?
 	  and  event_name in (?)
 	group by event_name, dt_created_min
+	option (interpreter_mode = compile_lite)
 	`
 	MRTSelectSum = `
 	select event_name, dt_created_min, format(sum(payload::$value), 0)
@@ -207,6 +210,7 @@ var (
 	  dt_created_min between ? and ?
 	  and  event_name in (?)
 	group by event_name, dt_created_min
+	option (interpreter_mode = compile_lite)
 	`
 	RTSelectSumValue = `
 	select event_name, dt_created_min, format(sum(value), 0)
@@ -215,6 +219,7 @@ var (
 	  dt_created_min between ? and ?
 	  and  event_name in (?)
 	group by event_name, dt_created_min
+	option (interpreter_mode = compile_lite)
 	`
 	MRTSelectSumValue = `
 	select event_name, dt_created_min, format(sum(value), 0)
@@ -223,5 +228,6 @@ var (
 	  dt_created_min between ? and ?
 	  and  event_name in (?)
 	group by event_name, dt_created_min
+	option (interpreter_mode = compile_lite)
 	`
 )
