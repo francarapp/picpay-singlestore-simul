@@ -107,3 +107,33 @@ CREATE  TABLE `s_event` (
   KEY `idx_n_event_correlation` (`correlation_id`) USING  HASH,
   KEY `idx_n_event_dt_min` (`event_name`,`dt_created_min`) USING  HASH
 );
+
+CREATE ROWSTORE TABLE `m_event` (
+  `event_name` varchar(40) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `event_id` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `correlation_id` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `user_id`  varchar(200)  CHARACTER SET utf8  COLLATE utf8_general_ci DEFAULT NULL,
+  `dt_created` datetime(6) DEFAULT  NULL,
+  `dt_received` datetime(6) DEFAULT  NULL,
+  `dt_ingested` datetime(6) DEFAULT NULL,
+  `labels` varchar(200) CHARACTER  SET utf8 COLLATE utf8_general_ci DEFAULT  NULL,
+  `payload` JSON COLLATE utf8_bin,
+
+  `value`  as payload::$value PERSISTED double,
+  `dt_created_min` as date_trunc('minute', dt_created) PERSISTED  datetime(6),
+  `dt_created_hour` as date_trunc('hour', dt_created) PERSISTED  datetime(6),
+  PRIMARY KEY `idx_n_event_id` (`event_id`),
+  SHARD KEY `__SHARDKEY` (`event_id`),
+
+  KEY `idx_n_event_user` (`user_id`),
+  KEY `idx_n_event_correlation` (`correlation_id`),
+  KEY `idx_n_event_dt_min` (`event_name`,`dt_created_min`),
+  KEY `idx_n_event_dt_hr` (`event_name`,`dt_created_hour`)
+);
+
+insert into m_event
+(event_name, event_id, correlation_id, user_id, dt_created, dt_received, dt_ingested, labels, payload)
+select event_name, event_id, correlation_id, user_id, dt_created, dt_received, dt_ingested, labels, payload
+from nn_event
+where dt_created_hour = '2023-08-23 11:00:00.000000';
+

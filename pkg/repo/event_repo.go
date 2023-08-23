@@ -18,16 +18,23 @@ type EventRepo interface {
 	QueryRTCount(ctx context.Context, events []string, start, end string) error
 	QueryRTSum(ctx context.Context, events []string, start, end string) error
 	QueryRTLabels(ctx context.Context, events []string, start, end string, labels []string) error
+
+	QueryMRTCount(ctx context.Context, events []string, start, end string) error
+	QueryMRTSum(ctx context.Context, events []string, start, end string) error
+	QueryMRTLabels(ctx context.Context, events []string, start, end string, labels []string) error
 }
 
 type FAfterExec func(method MethodExec, idx int, qtd int, millis int64)
 type MethodExec string
 
 var (
-	CreateExec        = MethodExec("Create")
-	QueryRTCountExec  = MethodExec("QueryRTCount")
-	QueryRTSumExec    = MethodExec("QueryRTSum")
-	QueryRTLabelsExec = MethodExec("QueryRTExec")
+	CreateExec         = MethodExec("Create")
+	QueryRTCountExec   = MethodExec("QueryRTCount")
+	QueryRTSumExec     = MethodExec("QueryRTSum")
+	QueryRTLabelsExec  = MethodExec("QueryRTExec")
+	QueryMRTCountExec  = MethodExec("QueryMRTCount")
+	QueryMRTSumExec    = MethodExec("QueryMRTSum")
+	QueryMRTLabelsExec = MethodExec("QueryMRTExec")
 )
 
 func NewGormEventRepo(idx int, db *gorm.DB, sparse bool, batchSize int, after FAfterExec) EventRepo {
@@ -130,6 +137,44 @@ func (repo *gormEventRepo) QueryRTLabels(ctx context.Context, events []string, s
 	return nil
 }
 
+func (repo *gormEventRepo) QueryMRTCount(ctx context.Context, events []string, start, end string) error {
+	repo.MutexCreate.Lock()
+	defer repo.MutexCreate.Unlock()
+	timestamp := time.Now()
+
+	var tx *gorm.DB
+	tx = repo.DB.Exec(
+		MRTSelectCount,
+		start, end, events,
+	)
+	if tx.Error != nil {
+		fmt.Printf("Failed: %s", tx.Error)
+	}
+	repo.FAfter(QueryRTCountExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+
+	return nil
+}
+
+func (repo *gormEventRepo) QueryMRTSum(ctx context.Context, events []string, start, end string) error {
+	timestamp := time.Now()
+
+	var tx *gorm.DB
+	tx = repo.DB.Exec(
+		MRTSelectSum,
+		start, end, events,
+	)
+	if tx.Error != nil {
+		fmt.Printf("Failed: %s", tx.Error)
+	}
+	repo.FAfter(QueryRTCountExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+
+	return nil
+}
+
+func (repo *gormEventRepo) QueryMRTLabels(ctx context.Context, events []string, start, end string, labels []string) error {
+	return nil
+}
+
 var (
 	RTSelectCount = `
 	select event_name, dt_created_min, format(count(*), 0)
@@ -139,9 +184,25 @@ var (
 	  and  event_name in (?)
 	group by event_name, dt_created_min
 	`
+	MRTSelectCount = `
+	select event_name, dt_created_min, format(count(*), 0)
+	from m_event 
+	where 
+	  dt_created_min between ? and ?
+	  and  event_name in (?)
+	group by event_name, dt_created_min
+	`
 	RTSelectSum = `
 	select event_name, dt_created_min, format(sum(payload::$valor), 0)
 	from nn_event 
+	where 
+	  dt_created_min between ? and ?
+	  and  event_name in (?)
+	group by event_name, dt_created_min
+	`
+	MRTSelectSum = `
+	select event_name, dt_created_min, format(sum(payload::$valor), 0)
+	from m_event 
 	where 
 	  dt_created_min between ? and ?
 	  and  event_name in (?)

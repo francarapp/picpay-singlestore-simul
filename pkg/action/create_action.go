@@ -45,6 +45,26 @@ func QueryRTSum(events []string, start, end string) Action {
 	}
 }
 
+func QueryMRTCount(events []string, start, end string) Action {
+	return &eventQueryAct{
+		Repo:   repoBuffer.Next(),
+		Exec:   repo.QueryMRTCountExec,
+		Events: events,
+		Start:  start,
+		End:    end,
+	}
+}
+
+func QueryMRTSum(events []string, start, end string) Action {
+	return &eventQueryAct{
+		Repo:   repoBuffer.Next(),
+		Exec:   repo.QueryMRTSumExec,
+		Events: events,
+		Start:  start,
+		End:    end,
+	}
+}
+
 // =================================================
 // ===============   CREATE ACTION   ===============
 
@@ -82,6 +102,10 @@ func (act *eventQueryAct) Do(ctx context.Context) error {
 		return act.Repo.QueryRTCount(ctx, act.Events, act.Start, act.End)
 	case repo.QueryRTSumExec:
 		return act.Repo.QueryRTSum(ctx, act.Events, act.Start, act.End)
+	case repo.QueryMRTCountExec:
+		return act.Repo.QueryMRTCount(ctx, act.Events, act.Start, act.End)
+	case repo.QueryMRTSumExec:
+		return act.Repo.QueryMRTSum(ctx, act.Events, act.Start, act.End)
 	}
 	return nil
 }

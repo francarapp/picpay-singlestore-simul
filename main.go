@@ -128,6 +128,11 @@ func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents i
 			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), start, end))
 		case "RTSum":
 			action.Dispatch(action.QueryRTSum(simul.GenEventNames(qtdEvents), start, end))
+		case "MRTCount":
+			action.Dispatch(action.QueryMRTCount(simul.GenEventNames(qtdEvents), start, end))
+		case "MRTSum":
+			action.Dispatch(action.QueryMRTSum(simul.GenEventNames(qtdEvents), start, end))
+
 		default:
 			action.Dispatch(action.QueryRTCount(simul.GenEventNames(qtdEvents), start, end))
 
