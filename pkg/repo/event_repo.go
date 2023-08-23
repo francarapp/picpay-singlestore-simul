@@ -193,7 +193,7 @@ var (
 	group by event_name, dt_created_min
 	`
 	RTSelectSum = `
-	select event_name, dt_created_min, format(sum(payload::$valor), 0)
+	select event_name, dt_created_min, format(sum(payload::$value), 0)
 	from nn_event 
 	where 
 	  dt_created_min between ? and ?
@@ -201,7 +201,23 @@ var (
 	group by event_name, dt_created_min
 	`
 	MRTSelectSum = `
-	select event_name, dt_created_min, format(sum(payload::$valor), 0)
+	select event_name, dt_created_min, format(sum(payload::$value), 0)
+	from m_event 
+	where 
+	  dt_created_min between ? and ?
+	  and  event_name in (?)
+	group by event_name, dt_created_min
+	`
+	RTSelectSumValue = `
+	select event_name, dt_created_min, format(sum(value), 0)
+	from nn_event 
+	where 
+	  dt_created_min between ? and ?
+	  and  event_name in (?)
+	group by event_name, dt_created_min
+	`
+	MRTSelectSumValue = `
+	select event_name, dt_created_min, format(sum(value), 0)
 	from m_event 
 	where 
 	  dt_created_min between ? and ?
