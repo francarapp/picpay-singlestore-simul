@@ -154,6 +154,8 @@ func query(db *gorm.DB, execCod string, threads int, qtdQueries int, qtdEvents i
 		return int(action.MonitorRepoQuery.Get(action.AcExecutions))
 	})
 	showFinal(execCod, threads, qtdQueries, 0, time.Since(startTm), action.MonitorRepoQuery)
+	action.Clean()
+
 	return nil
 }
 
