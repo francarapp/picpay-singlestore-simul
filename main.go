@@ -50,7 +50,13 @@ func main() {
 	if !*silentFlag {
 		alogger = logger.Default.LogMode(logger.Info)
 	}
-	db, err := gorm.Open(mysql.Open("root:singlestore@tcp(10.164.47.110:3306)/events?parseTime=true&loc=UTC"), &gorm.Config{
+	user := "ingest_events"
+	if !*createFlag {
+		user = "rt_events"
+	}
+	db, err := gorm.Open(mysql.Open(
+		fmt.Sprintf("%s:12345@tcp(10.164.47.110:3306)/events?parseTime=true&loc=UTC", user),
+	), &gorm.Config{
 		Logger: alogger,
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled

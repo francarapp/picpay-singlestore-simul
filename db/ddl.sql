@@ -1,4 +1,6 @@
-CREATE TABLE event(
+CREATE DATABASE mlops PARTITIONS 32 ON S3 "picpay-dataeng-singlestore";
+
+ CREATE TABLE event(
   event_name VARCHAR(40),
   event_id VARCHAR(200),
   correlation_id VARCHAR(200),
