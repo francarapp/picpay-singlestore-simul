@@ -52,7 +52,7 @@ func main() {
 	}
 	user := "ingest_events"
 	if !*createFlag {
-		user = "rt_events"
+		user = "rt_pp1min"
 	}
 	db, err := gorm.Open(mysql.Open(
 		fmt.Sprintf("%s:12345@tcp(10.164.47.110:3306)/events?parseTime=true&loc=UTC", user),
