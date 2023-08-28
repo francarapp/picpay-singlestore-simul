@@ -180,6 +180,7 @@ func Clean() {
 	MonitorActionCreate.Clean()
 	MonitorActionDispatch.Clean()
 	MonitorRepoCreate.Clean()
+	MonitorRepoQuery.Clean()
 }
 
 func IfThenElse(condition bool, a int64, b int64) int64 {
