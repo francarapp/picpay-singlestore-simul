@@ -74,22 +74,27 @@ func main() {
 		DB:          db,
 	})
 
-	if *createFlag {
-		if *deamonFlag {
-			for i := 0; ; i++ {
-				fmt.Println("\n\n***")
-				fmt.Printf("*** SIMUL_%s EXECUTION %d \n", *codFlag, i)
-				fmt.Println("***")
-				create(db, *createSparseFlag, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag, *createCorrelationsFlag)
-			}
-		} else {
+	FDo := func() {
+		if *createFlag {
 			create(db, *createSparseFlag, *codFlag, *threadsFlag, *createQtdFlag, *createBatchFlag, *createCorrelationsFlag)
+		} else {
+			query(db, *codFlag, *threadsFlag, *queryQtdFlag,
+				*queryEventsFlag, *querySelectFlag,
+				*queryStartFlag, *queryEndFlag)
+		}
+	}
+
+	if *deamonFlag {
+		for i := 0; ; i++ {
+			fmt.Println("\n\n***")
+			fmt.Printf("*** SIMUL_%s EXECUTION %d \n", *codFlag, i)
+			fmt.Println("***")
+			FDo()
 		}
 	} else {
-		query(db, *codFlag, *threadsFlag, *queryQtdFlag,
-			*queryEventsFlag, *querySelectFlag,
-			*queryStartFlag, *queryEndFlag)
+		FDo()
 	}
+
 }
 
 func create(db *gorm.DB, sparse bool, execCod string, threads int, qtdEvs int, batchSize int, maxCorrelations int) error {
