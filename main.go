@@ -215,11 +215,11 @@ func produceWait(ctx context.Context, execCod string, qtdEvs int, getter func() 
 	stalledCount := 0
 	for !stop && getter() < qtdEvs {
 		time.Sleep(15 * time.Second)
-		if stalledCount == int(action.MonitorRepoCreate.Get(action.AcExecutions)) {
+		if stalledCount == getter() {
 			stalled++
 		} else {
 			stalled = 0
-			stalledCount = int(action.MonitorRepoCreate.Get(action.AcExecutions))
+			stalledCount = getter()
 		}
 		if stalled == 10 {
 			fmt.Printf("\nSTALLED\n")
