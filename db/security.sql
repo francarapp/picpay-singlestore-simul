@@ -13,6 +13,9 @@ GRANT CLUSTER on *.* to ROLE 'dba_role';
 GRANT SHOW METADATA on *.* to ROLE 'dba_role';
 GRANT BACKUP, RELOAD on *.* to ROLE 'dba_role';
 
+CREATE ROLE 'monitoring_role';
+GRANT SHOW METADATA on *.* to ROLE 'monitoring_role';
+
 CREATE GROUP 'admin_ss_group';
 GRANT ROLE 'dba_role' to 'admin_ss_group';
 GRANT ROLE 'security_role' to 'admin_ss_group';

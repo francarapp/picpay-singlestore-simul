@@ -120,15 +120,14 @@ func (repo *gormEventRepo) QueryRTCount(ctx context.Context, events []string, st
 func (repo *gormEventRepo) QueryRTSum(ctx context.Context, events []string, start, end string) error {
 	timestamp := time.Now()
 
-	var tx *gorm.DB
-	tx = repo.DB.Exec(
+	tx := repo.DB.Exec(
 		RTSelectSum,
 		start, end, events,
 	)
 	if tx.Error != nil {
 		fmt.Printf("Failed: %s", tx.Error)
 	}
-	repo.FAfter(QueryRTCountExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+	repo.FAfter(QueryRTSumExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
 
 	return nil
 }
@@ -150,7 +149,7 @@ func (repo *gormEventRepo) QueryMRTCount(ctx context.Context, events []string, s
 	if tx.Error != nil {
 		fmt.Printf("Failed: %s", tx.Error)
 	}
-	repo.FAfter(QueryRTCountExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+	repo.FAfter(QueryMRTCountExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
 
 	return nil
 }
@@ -166,7 +165,7 @@ func (repo *gormEventRepo) QueryMRTSum(ctx context.Context, events []string, sta
 	if tx.Error != nil {
 		fmt.Printf("Failed: %s", tx.Error)
 	}
-	repo.FAfter(QueryRTCountExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+	repo.FAfter(QueryMRTSumExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
 
 	return nil
 }

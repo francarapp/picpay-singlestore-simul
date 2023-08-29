@@ -9,6 +9,7 @@ GRANT LOCK TABLES on mlops.* to ROLE 'db_mlops_owner_role';
 
 CREATE GROUP 'admin_mlops_group';
 GRANT ROLE 'db_mlops_owner_role' to 'admin_mlops_group';
+GRANT ROLE 'monitoring_role' to 'admin_mlops_group';
 
 
 CREATE ROLE 'db_mlops_analytics_role';

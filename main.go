@@ -221,7 +221,8 @@ func produceWait(ctx context.Context, execCod string, qtdEvs int, getter func() 
 			stalled = 0
 			stalledCount = int(action.MonitorRepoCreate.Get(action.AcExecutions))
 		}
-		if stalled == 4 {
+		if stalled == 10 {
+			fmt.Printf("\nSTALLED\n")
 			stop = true
 		}
 		action.ForceFlush(ctx)
