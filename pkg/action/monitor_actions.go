@@ -161,7 +161,7 @@ func done(exec repo.MethodExec, idx int, qtd int, millis int64) {
 			acCommand{AcMin, IfThenElse(millis < MonitorRepoCreate.Get(AcMin), millis, MonitorRepoCreate.Get(AcMin))},
 			acCommand{AcAvg, avg},
 		)
-	case repo.QueryRTCountExec, repo.QueryRTSumExec, repo.QueryRTLabelsExec:
+	case repo.QueryRTCountExec, repo.QueryRTSumExec, repo.QueryRTSumValueExec, repo.QueryRTLabelsExec:
 		fmt.Printf("%s[%d]: %d millis \n", exec, idx, millis)
 		executions := MonitorRepoQuery.Get(AcExecutions)
 		avg := MonitorRepoQuery.Get(AcAvg)

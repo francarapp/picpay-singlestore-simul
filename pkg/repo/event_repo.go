@@ -144,7 +144,7 @@ func (repo *gormEventRepo) QueryRTSumValue(ctx context.Context, events []string,
 	if tx.Error != nil {
 		fmt.Printf("Failed: %s", tx.Error)
 	}
-	repo.FAfter(QueryRTSumExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+	repo.FAfter(QueryRTSumValueExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
 
 	return nil
 }
