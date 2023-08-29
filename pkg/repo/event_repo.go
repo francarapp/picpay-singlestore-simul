@@ -17,6 +17,7 @@ type EventRepo interface {
 
 	QueryRTCount(ctx context.Context, events []string, start, end string) error
 	QueryRTSum(ctx context.Context, events []string, start, end string) error
+	QueryRTSumValue(ctx context.Context, events []string, start, end string) error
 	QueryRTLabels(ctx context.Context, events []string, start, end string, labels []string) error
 
 	QueryMRTCount(ctx context.Context, events []string, start, end string) error
@@ -28,13 +29,14 @@ type FAfterExec func(method MethodExec, idx int, qtd int, millis int64)
 type MethodExec string
 
 var (
-	CreateExec         = MethodExec("Create")
-	QueryRTCountExec   = MethodExec("QueryRTCount")
-	QueryRTSumExec     = MethodExec("QueryRTSum")
-	QueryRTLabelsExec  = MethodExec("QueryRTExec")
-	QueryMRTCountExec  = MethodExec("QueryMRTCount")
-	QueryMRTSumExec    = MethodExec("QueryMRTSum")
-	QueryMRTLabelsExec = MethodExec("QueryMRTExec")
+	CreateExec          = MethodExec("Create")
+	QueryRTCountExec    = MethodExec("QueryRTCount")
+	QueryRTSumExec      = MethodExec("QueryRTSum")
+	QueryRTSumValueExec = MethodExec("QueryRTSumValue")
+	QueryRTLabelsExec   = MethodExec("QueryRTExec")
+	QueryMRTCountExec   = MethodExec("QueryMRTCount")
+	QueryMRTSumExec     = MethodExec("QueryMRTSum")
+	QueryMRTLabelsExec  = MethodExec("QueryMRTExec")
 )
 
 func NewGormEventRepo(idx int, db *gorm.DB, sparse bool, batchSize int, after FAfterExec) EventRepo {
@@ -122,6 +124,21 @@ func (repo *gormEventRepo) QueryRTSum(ctx context.Context, events []string, star
 
 	tx := repo.DB.Exec(
 		RTSelectSum,
+		start, end, events,
+	)
+	if tx.Error != nil {
+		fmt.Printf("Failed: %s", tx.Error)
+	}
+	repo.FAfter(QueryRTSumExec, repo.Index, 1, time.Since(timestamp).Milliseconds())
+
+	return nil
+}
+
+func (repo *gormEventRepo) QueryRTSumValue(ctx context.Context, events []string, start, end string) error {
+	timestamp := time.Now()
+
+	tx := repo.DB.Exec(
+		RTSelectSumValue,
 		start, end, events,
 	)
 	if tx.Error != nil {
